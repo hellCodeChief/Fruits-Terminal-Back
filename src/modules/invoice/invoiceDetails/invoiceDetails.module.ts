@@ -1,0 +1,11 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { InvoiceDetail } from './invoiceDetails.entity';
+
+
+@Module({
+  imports: [TypeOrmModule.forFeature([InvoiceDetail])],
+  providers: [],
+  controllers: []
+})
+export class InvoiceDetailsModule { };
