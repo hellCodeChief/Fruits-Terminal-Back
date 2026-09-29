@@ -9,7 +9,10 @@ import { ProductEntity } from './product.entity';
 import { In, Repository } from 'typeorm';
 import { CategoryEntity } from 'src/modules/category/category.entity';
 import { ProductUpdateDTO } from './dtos/ProductUpdate.dto';
+import { ProductInsertDTO } from './dtos/ProductInsert.dto';
+import { ProductVariantEntity } from '../productVariant/productVariant.entity';
 import { Sort } from '../productVariant/productVariant.enum';
+import { FilesService } from '../files/files.service';
 
 @Injectable()
 export class ProductService {
@@ -18,6 +21,9 @@ export class ProductService {
     private readonly productRepository: Repository<ProductEntity>,
     @InjectRepository(CategoryEntity)
     private readonly categoryRepository: Repository<CategoryEntity>,
+    @InjectRepository(ProductVariantEntity)
+    private readonly variantRepository: Repository<ProductVariantEntity>,
+    private readonly filesService: FilesService,
   ) {}
 
   async findAll(sort?: Sort) {
@@ -57,26 +63,78 @@ export class ProductService {
     });
   }
 
-  async insert(
-    productPayload: { slug: string; isActive?: boolean },
-    categoryIds: Array<number>,
-  ) {
+  async insert(payload: ProductInsertDTO, file: Express.Multer.File) {
+    const product = this.productRepository.create({
+      slug: payload.slug || payload.name,
+      ...(payload.isActive !== undefined ? { isActive: payload.isActive } : {}),
+    });
+
+    await this.SyncCats(product, payload.categoryIds ?? []);
+
+    let saved: ProductEntity;
     try {
-      const product = this.productRepository.create(productPayload);
-
-      await this.SyncCats(product, categoryIds);
-
-      return await this.productRepository.save(product);
+      saved = await this.productRepository.save(product);
     } catch (error) {
+      throw new HttpException({ error }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    try {
+      const variant = await this.createDefaultVariant(saved.id, payload);
+      await this.productRepository.update(
+        { id: saved.id },
+        { defaultVariantId: variant.id },
+      );
+      await this.filesService.uploadFile(file, {
+        targetId: saved.id,
+        usage: 'product',
+      });
+      return await this.findOne(saved.id);
+    } catch (error) {
+      await this.variantRepository.delete({ productId: saved.id });
+      await this.productRepository.delete({ id: saved.id });
+      if (error instanceof HttpException) throw error;
       throw new HttpException({ error }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async update(productPayload: ProductUpdateDTO, id: number) {
+  async update(
+    payload: ProductUpdateDTO,
+    id: number,
+    file?: Express.Multer.File,
+  ) {
+    const product = await this.findOne(id);
+    if (!product)
+      throw new HttpException('محصول موردنظر یافت نشد', HttpStatus.NOT_FOUND);
+
     try {
-      await this.productRepository.update({ id }, productPayload);
+      const productPatch: Partial<ProductEntity> = {};
+      if (payload.slug !== undefined) productPatch.slug = payload.slug;
+      else if (payload.name !== undefined) productPatch.slug = payload.name;
+      if (payload.isActive !== undefined) productPatch.isActive = payload.isActive;
+
+      if (Object.keys(productPatch).length > 0) {
+        await this.productRepository.update({ id }, productPatch);
+      }
+
+      if (payload.categoryIds !== undefined) {
+        await this.updateProductCategories(id, payload.categoryIds);
+      }
+
+      await this.syncSaleFields(product, payload);
+
+      if (file) {
+        await this.filesService.uploadFile(file, {
+          targetId: id,
+          usage: 'product',
+        });
+        for (const previous of product.files ?? []) {
+          await this.filesService.delete(previous.id, 'product');
+        }
+      }
+
       return await this.productRepository.findBy({ id });
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new HttpException({ error }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -132,11 +190,11 @@ export class ProductService {
   // PRIVATE METHODS ------------------------------------------------------------------------------------------
   private async SyncCats(product: ProductEntity, categoryIds: Array<number>) {
     // When updateProductCategories is called, "noCats" will be attached
-    if (categoryIds.length === 0) {
+    if (!categoryIds || categoryIds.length === 0) {
       const noCats = await this.categoryRepository.findOneBy({
         slug: 'noCats',
       });
-      product.categories = [noCats];
+      product.categories = noCats ? [noCats] : [];
       return;
     }
 
@@ -162,5 +220,56 @@ export class ProductService {
     }
 
     return queryBuilder;
+  }
+
+  private async createDefaultVariant(
+    productId: number,
+    payload: { name: string; price: number; description?: string; isActive?: boolean },
+  ) {
+    const stamp = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const variant = this.variantRepository.create({
+      name: payload.name,
+      slug: `item-${productId}-${stamp}`,
+      sku: `sku-${productId}-${stamp}`,
+      price: payload.price,
+      desc: payload.description || null,
+      productId,
+      stock: 0,
+      isActive: payload.isActive ?? true,
+    });
+    return await this.variantRepository.save(variant);
+  }
+
+  private async syncSaleFields(product: ProductEntity, payload: ProductUpdateDTO) {
+    const touchesSale =
+      payload.name !== undefined ||
+      payload.price !== undefined ||
+      payload.description !== undefined;
+    if (!touchesSale) return;
+
+    const current =
+      product.variants?.find((variant) => variant.id === product.defaultVariantId) ||
+      product.variants?.[0];
+
+    if (!current) {
+      if (payload.name === undefined || payload.price === undefined) return;
+      const created = await this.createDefaultVariant(product.id, {
+        name: payload.name,
+        price: payload.price,
+        description: payload.description,
+        isActive: payload.isActive,
+      });
+      await this.productRepository.update(
+        { id: product.id },
+        { defaultVariantId: created.id },
+      );
+      return;
+    }
+
+    if (payload.name !== undefined) current.name = payload.name;
+    if (payload.price !== undefined) current.price = payload.price;
+    if (payload.description !== undefined) current.desc = payload.description || null;
+    if (payload.isActive !== undefined) current.isActive = payload.isActive;
+    await this.variantRepository.save(current);
   }
 }

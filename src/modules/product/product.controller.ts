@@ -23,6 +23,7 @@ import { Permissions } from 'src/common/decorators/Permissions.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductService } from './product.service';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { isPhotoFile, preparePhotoFile } from '../files/photo-file';
 
 @Controller('product')
 @ApiBearerAuth('access-token')
@@ -48,16 +49,36 @@ export class ProductController {
   @Post()
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions('product:create')
-  async insert(@Body() payload: ProductInsertDTO) {
-    const { categoryIds, ...productPayload } = payload;
-    return await this.productService.insert(productPayload, categoryIds);
+  @UseInterceptors(FileInterceptor('file'))
+  async insert(
+    @Body() payload: ProductInsertDTO,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file)
+      throw new BadRequestException('تصویر محصول الزامی است');
+    if (!isPhotoFile(file))
+      throw new BadRequestException('لطفا یک عکس از گالری یا دوربین انتخاب کنید');
+
+    return await this.productService.insert(payload, preparePhotoFile(file));
   }
 
   @Put('/:id')
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions('product:update')
-  async update(@Body() payload: ProductUpdateDTO, @Param('id') id: number) {
-    return await this.productService.update(payload, id);
+  @UseInterceptors(FileInterceptor('file'))
+  async update(
+    @Body() payload: ProductUpdateDTO,
+    @Param('id') id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (file && !isPhotoFile(file))
+      throw new BadRequestException('لطفا یک عکس از گالری یا دوربین انتخاب کنید');
+
+    return await this.productService.update(
+      payload,
+      id,
+      file ? preparePhotoFile(file) : undefined,
+    );
   }
 
   @Delete(':id')
@@ -115,13 +136,15 @@ export class ProductController {
   ) {
     if (!file)
       throw new BadRequestException('لطفا فایل موردنظر خود را وارد کنید');
+    if (!isPhotoFile(file))
+      throw new BadRequestException('لطفا یک عکس از گالری یا دوربین انتخاب کنید');
 
     // Check if targetId is valid
     const product = await this.productService.findOne(targetId);
     if (!product)
       throw new BadRequestException('شناسه ارسال شده معتبر نمیباشد');
 
-    return await this.filesService.uploadFile(file, {
+    return await this.filesService.uploadFile(preparePhotoFile(file), {
       targetId,
       usage: this.usage,
     });
