@@ -23,6 +23,7 @@ import { PermissionEntity } from './modules/permission/permission.entity';
 import { UserEntity } from './modules/user/user.entity';
 import { PropertyEntity } from './modules/property/property.entity';
 import { PropertyValueController } from './modules/propertyValue/propertyValue.controller';
+import { VitrineModule } from './modules/vitrine/vitrine.module';
 
 
 @Module({
@@ -61,6 +62,7 @@ import { PropertyValueController } from './modules/propertyValue/propertyValue.c
     BasketModule,
     InvoiceModule,
     PaymentModule,
+    VitrineModule,
   ],
   controllers: [
     PropertyValueController,
