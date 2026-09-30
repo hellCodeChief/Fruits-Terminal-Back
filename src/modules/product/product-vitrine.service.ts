@@ -4,32 +4,55 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FilesService } from 'src/modules/files/files.service';
 import { CategoryEntity } from 'src/modules/category/category.entity';
-import { ProductEntity } from 'src/modules/product/product.entity';
+import { FilesService } from 'src/modules/files/files.service';
 import { Repository } from 'typeorm';
 import { VitrineCreateDTO } from './dtos/vitrine-create.dto';
-import { escapeLike, normalizePersianName } from './normalize-name';
-import { tehranDateLabel, tehranDayRange } from './tehran-day';
-import { VitrineEntryEntity, VitrineUnit } from './vitrine-entry.entity';
+import { ProductEntity } from './product.entity';
+import { VitrineEntryEntity } from './vitrine-entry.entity';
 
 const NOTICE = 'حداقل یک جعبه · خرید خرد نداریم · پیکاپ از میدان';
+const UNIT = 'کیلو';
+const TEHRAN_OFFSET_MS = (3 * 60 + 30) * 60 * 1000;
 
-export type VitrineCard = {
-  id: number;
-  productId: number;
-  name: string;
-  price: number;
-  unit: VitrineUnit;
-  description: string | null;
-  categoryId: number | null;
-  categoryName: string | null;
-  fileId: string | null;
-  createdAt: Date;
-};
+function normalizePersianName(input: string): string {
+  return (input ?? '')
+    .replace(/[يى]/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .replace(/[\u200c\u200d]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function escapeLike(input: string): string {
+  return input.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+/** Asia/Tehran calendar day. Iran is UTC+03:30 year-round, so the day starts at 20:30 UTC. */
+function tehranDayRange(now = new Date()) {
+  const shifted = new Date(now.getTime() + TEHRAN_OFFSET_MS);
+  const start = new Date(
+    Date.UTC(
+      shifted.getUTCFullYear(),
+      shifted.getUTCMonth(),
+      shifted.getUTCDate(),
+    ) - TEHRAN_OFFSET_MS,
+  );
+  return { start, end: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+}
+
+function tehranDateLabel(now = new Date()) {
+  return new Intl.DateTimeFormat('fa-IR', {
+    timeZone: 'Asia/Tehran',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(now);
+}
 
 @Injectable()
-export class VitrineService {
+export class ProductVitrineService {
   constructor(
     @InjectRepository(VitrineEntryEntity)
     private readonly entries: Repository<VitrineEntryEntity>,
@@ -41,8 +64,7 @@ export class VitrineService {
   ) {}
 
   async today() {
-    const range = tehranDayRange();
-    const rows = await this.latestEntries(range);
+    const rows = await this.latestEntries(tehranDayRange());
     const items = rows
       .map((row) => this.toCard(row))
       .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
@@ -81,7 +103,7 @@ export class VitrineService {
         productId: product.id,
         name: product.name,
         price: row ? Number(row.price) : null,
-        unit: row?.unit ?? null,
+        unit: UNIT,
       };
     });
   }
@@ -117,7 +139,7 @@ export class VitrineService {
       this.entries.create({
         productId: product.id,
         price: dto.price,
-        unit: dto.unit ?? 'جعبه',
+        unit: UNIT,
         description: dto.description?.trim() || null,
         categoryId: category?.id ?? null,
         fileId: savedFile.id,
@@ -130,9 +152,9 @@ export class VitrineService {
   }
 
   /**
-   * Latest row per product. When `range` is set, only rows inside that window
-   * compete — that is the "latest for today" read. Without a range, the latest
-   * row by createdAt is the product's current price.
+   * Latest row per product. Postgres DISTINCT ON (productId) with
+   * ORDER BY productId, createdAt DESC. When `range` is set, only rows
+   * inside the current Tehran day compete.
    */
   private async latestEntries(
     range?: { start: Date; end: Date },
@@ -209,13 +231,13 @@ export class VitrineService {
     }
   }
 
-  private toCard(entry: VitrineEntryEntity): VitrineCard {
+  private toCard(entry: VitrineEntryEntity) {
     return {
       id: entry.id,
       productId: entry.productId,
       name: entry.product?.name || '',
       price: Number(entry.price),
-      unit: entry.unit,
+      unit: UNIT,
       description: entry.description ?? null,
       categoryId: entry.categoryId ?? null,
       categoryName: entry.category?.displayName ?? null,

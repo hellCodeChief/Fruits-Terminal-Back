@@ -1,5 +1,4 @@
 import { CategoryEntity } from 'src/modules/category/category.entity';
-import { ProductEntity } from 'src/modules/product/product.entity';
 import {
   Column,
   CreateDateColumn,
@@ -9,9 +8,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-
-export const VITRINE_UNITS = ['جعبه', 'کیسه', 'کیلو'] as const;
-export type VitrineUnit = (typeof VITRINE_UNITS)[number];
+import { ProductEntity } from './product.entity';
 
 @Entity({ name: 'vitrineEntry' })
 @Index(['productId', 'createdAt'])
@@ -22,8 +19,8 @@ export class VitrineEntryEntity {
   @Column({ type: 'int' })
   price: number;
 
-  @Column({ type: 'varchar', default: 'جعبه' })
-  unit: VitrineUnit;
+  @Column({ type: 'varchar', default: 'کیلو' })
+  unit: string;
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   description: string | null;

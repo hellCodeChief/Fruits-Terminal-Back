@@ -17,7 +17,7 @@ export class Migration1764500000000 implements MigrationInterface {
       CREATE TABLE IF NOT EXISTS "vitrineEntry" (
         "id" SERIAL NOT NULL,
         "price" integer NOT NULL,
-        "unit" character varying NOT NULL DEFAULT 'جعبه',
+        "unit" character varying NOT NULL DEFAULT 'کیلو',
         "description" character varying(300),
         "productId" integer NOT NULL,
         "categoryId" integer,

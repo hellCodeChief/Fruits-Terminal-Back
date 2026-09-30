@@ -1,6 +1,5 @@
 import { Transform } from 'class-transformer';
 import {
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -8,7 +7,6 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { VITRINE_UNITS, VitrineUnit } from '../vitrine-entry.entity';
 
 function blankToUndefined(value: unknown) {
   if (value === undefined || value === null) return undefined;
@@ -36,11 +34,6 @@ export class VitrineCreateDTO {
   @IsInt({ message: 'قیمت باید عدد باشد' })
   @Min(1, { message: 'قیمت را وارد کنید' })
   price: number;
-
-  @Transform(({ value }) => blankToUndefined(value))
-  @IsOptional()
-  @IsIn(VITRINE_UNITS, { message: 'واحد نامعتبر است' })
-  unit?: VitrineUnit;
 
   @Transform(({ value }) => {
     const next = blankToUndefined(value);
