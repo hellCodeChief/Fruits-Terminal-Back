@@ -65,11 +65,11 @@ export class VariantDTO {
   @IsNumber()
   productId: number;
 
-  @ArrayNotEmpty()
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => Props)
-  props: Props[];
+  props?: Props[];
 
   @IsOptional()
   @IsString()

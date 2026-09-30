@@ -28,11 +28,9 @@ export class ProductSubscriber implements EntitySubscriberInterface<ProductEntit
         categoryRepository: Repository<CategoryEntity>,
         product: ProductEntity
     ) {
-        // A vitrine product can be saved with no category.
         const catIds = (product.categories ?? [])
             .map(cat => cat?.id)
             .filter((id): id is number => typeof id === 'number');
-
         if (catIds.length === 0) return;
 
         // Fetch all properties from these categories

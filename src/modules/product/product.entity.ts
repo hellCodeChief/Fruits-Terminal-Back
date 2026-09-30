@@ -28,12 +28,6 @@ export class ProductEntity {
     slug: string;
 
     @Column({ nullable: true })
-    name: string;
-
-    @Column({ type: 'varchar', nullable: true, unique: true })
-    normalizedName: string;
-
-    @Column({ nullable: true })
     defaultVariantId: number;
 
     @CreateDateColumn()

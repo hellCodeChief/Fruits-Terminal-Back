@@ -3,15 +3,12 @@ import {
   Body,
   Controller,
   Delete,
-  ForbiddenException,
   Get,
   HttpException,
   HttpStatus,
   Param,
   Post,
   Put,
-  Query,
-  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -25,23 +22,7 @@ import { AuthGuard } from 'src/modules/auth/guard/auth.guard';
 import { Permissions } from 'src/common/decorators/Permissions.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductService } from './product.service';
-import { ProductVitrineService } from './product-vitrine.service';
-import { VitrineCreateDTO } from './dtos/vitrine-create.dto';
-import { ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
-
-const STAFF_ROLES = new Set(['admin', 'worker']);
-
-function assertStaff(user?: { accountType?: string; roles?: { name?: string }[] }) {
-  if (!user) throw new ForbiddenException('شما دسترسی لازم را ندارید');
-  if (user.accountType === 'admin') return;
-  const names = (user.roles ?? []).map((role) =>
-    String(role?.name ?? '')
-      .trim()
-      .toLowerCase(),
-  );
-  if (names.some((name) => STAFF_ROLES.has(name))) return;
-  throw new ForbiddenException('فقط مدیر یا کارگر می‌تواند در ویترین ثبت کند');
-}
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('product')
 @ApiBearerAuth('access-token')
@@ -50,44 +31,12 @@ export class ProductController {
   constructor(
     private readonly productService: ProductService,
     private readonly filesService: FilesService,
-    private readonly vitrineService: ProductVitrineService,
   ) {}
 
   @Get()
   // @Permissions('product:read')
   async findAll() {
     return await this.productService.findAll();
-  }
-
-  @Get('vitrine/today')
-  today() {
-    return this.vitrineService.today();
-  }
-
-  @Get('vitrine/suggest')
-  @UseGuards(AuthGuard)
-  suggest(
-    @Req() req: { user?: { accountType?: string; roles?: { name?: string }[] } },
-    @Query('q') q?: string,
-  ) {
-    assertStaff(req.user);
-    return this.vitrineService.suggest(q ?? '');
-  }
-
-  @Post('vitrine')
-  @ApiConsumes('multipart/form-data')
-  @UseGuards(AuthGuard)
-  @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 8 * 1024 * 1024 } }),
-  )
-  create(
-    @Req() req: { user?: { accountType?: string; roles?: { name?: string }[] } },
-    @Body() payload: VitrineCreateDTO,
-    @UploadedFile() file?: Express.Multer.File,
-  ) {
-    assertStaff(req.user);
-    if (!file) throw new BadRequestException('تصویر را انتخاب کنید');
-    return this.vitrineService.create(payload, file);
   }
 
   @Get('/:id')

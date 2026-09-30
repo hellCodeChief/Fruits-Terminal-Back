@@ -136,7 +136,7 @@ export class ProductService {
       const noCats = await this.categoryRepository.findOneBy({
         slug: 'noCats',
       });
-      product.categories = [noCats];
+      product.categories = noCats ? [noCats] : [];
       return;
     }
 
