@@ -73,10 +73,18 @@ export class ProductService {
   }
 
   async update(productPayload: ProductUpdateDTO, id: number) {
+    const { categoryIds, ...fields } = productPayload;
     try {
-      await this.productRepository.update({ id }, productPayload);
+      if (fields.slug !== undefined || fields.isActive !== undefined) {
+        await this.productRepository.update({ id }, fields);
+      }
+      // ✅ دسته جدا از ستون‌های محصول است
+      if (categoryIds) {
+        await this.updateProductCategories(id, categoryIds);
+      }
       return await this.productRepository.findBy({ id });
     } catch (error) {
+      if (error instanceof HttpException) throw error;
       throw new HttpException({ error }, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
