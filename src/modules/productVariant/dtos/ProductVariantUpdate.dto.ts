@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class ProductVariantUpdateDTO {
 
@@ -38,6 +38,12 @@ export class ProductVariantUpdateDTO {
     @Min(0)
     @IsNumber()
     price: number;
+
+    // حداقل سفارش به کیلو
+    @IsOptional()
+    @IsInt()
+    @Min(1)
+    minOrder: number;
 
     @IsOptional()
     @Min(0)

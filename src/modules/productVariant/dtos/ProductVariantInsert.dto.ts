@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsNotEmpty,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -48,6 +49,11 @@ export class VariantDTO {
   @IsNumber()
   @Min(0)
   price: number;
+
+  // حداقل سفارش به کیلو
+  @IsInt()
+  @Min(1)
+  minOrder: number;
 
   @IsOptional()
   @Min(0)

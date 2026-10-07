@@ -48,6 +48,10 @@ export class ProductVariantEntity {
     @Column({ type: 'bigint', default: 0 })
     price: number; // base price before discounts and tax
 
+    // حداقل سفارش به کیلو؛ واحد جدا ذخیره نمی‌شود
+    @Column({ type: 'int', nullable: true })
+    minOrder: number;
+
     @Column({ default: 0 })
     @Check(`"discountPercentage" >= 0 AND "discountPercentage" <= 100`)
     discountPercentage: number;
