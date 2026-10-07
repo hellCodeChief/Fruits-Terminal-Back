@@ -321,17 +321,7 @@ export class ProductVariantService {
         });
       }
 
-      // Remove redundant variants
-      if (updatedVariants?.length > 0) {
-        const varIds = updatedVariants.map(v => v.id);
-        await queryRunner.manager
-          .createQueryBuilder()
-          .delete()
-          .from(ProductVariantEntity)
-          .where('id NOT IN (:...varIds)', { varIds })
-          .execute();
-      }
-
+      // ✅ ذخیره فقط همین ردیف‌ها را به‌روز می‌کند؛ حذف خودکار بقیه، تنوع‌های دیگر جدول را پاک می‌کرد
       await queryRunner.commitTransaction();
 
       return updatedVariants;
