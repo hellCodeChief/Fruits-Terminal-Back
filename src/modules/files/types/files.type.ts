@@ -1,1 +1,1 @@
-export type FileUsage = 'product-variant' | 'category' | 'advertisement' | 'product';
+export type FileUsage = 'product-variant' | 'category' | 'advertisement' | 'product' | 'daily-product';
