@@ -81,7 +81,7 @@ export class FilesService {
 
   async delete(id: string, usage: FileUsage) {
     try {
-      await this.minioClient.removeObject(usage, id);
+      await this.removeStoredObject(usage, id);
       await this.fileRepository.delete(id);
     } catch (err) {
       throw new InternalServerErrorException(
@@ -108,12 +108,32 @@ export class FilesService {
     const files = await this.fileRepository.find({ where });
     try {
       for (const file of files) {
-        await this.minioClient.removeObject(usage, file.id);
+        await this.removeStoredObject(usage, file.id);
         await this.fileRepository.delete(file.id);
       }
     } catch (err) {
       throw new InternalServerErrorException('شکست در حذف فایل', err.message);
     }
+  }
+
+  // ✅ نبودن آبجکت در MinIO مانع حذف ردیف files نمی‌شود
+  private async removeStoredObject(usage: FileUsage, id: string) {
+    try {
+      await this.minioClient.removeObject(usage, id);
+    } catch (err) {
+      if (this.objectAlreadyGone(err)) return;
+      throw err;
+    }
+  }
+
+  private objectAlreadyGone(err: { code?: string; name?: string; message?: string }) {
+    const code = err?.code || err?.name;
+    const message = err?.message || '';
+    return (
+      code === 'NoSuchKey' ||
+      code === 'NotFound' ||
+      message.includes('The specified key does not exist')
+    );
   }
 
   // PRIVATE METHODS

@@ -28,8 +28,10 @@ export class ProductSubscriber implements EntitySubscriberInterface<ProductEntit
         categoryRepository: Repository<CategoryEntity>,
         product: ProductEntity
     ) {
-        // Get all category IDs linked to the product
-        const catIds = product.categories?.map(cat => cat.id);
+        const catIds = (product.categories ?? [])
+            .map(cat => cat?.id)
+            .filter((id): id is number => typeof id === 'number');
+        if (catIds.length === 0) return;
 
         // Fetch all properties from these categories
         const props = await this.getProps(categoryRepository, catIds);

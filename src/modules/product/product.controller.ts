@@ -84,14 +84,14 @@ export class ProductController {
   async hardDelete(@Param('id') id: string) {
     const product = await this.productService.findOne(Number(id));
     try {
-      await this.productService.hardDelete(Number(id));
+      // ✅ عکس‌ها قبل از حذف ردیف؛ CASCADE بعد از آن ردیف files را پاک می‌کند
       await this.filesService.multiDelete(String(id), this.usage);
-
-      for (const varaint of product.variants)
+      for (const varaint of product?.variants ?? [])
         await this.filesService.multiDelete(
           String(varaint.id),
           'product-variant',
         );
+      await this.productService.hardDelete(Number(id));
 
       return {
         message: 'ProductVariant successfully hard deleted',

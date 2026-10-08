@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsNotEmpty,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
@@ -49,6 +50,11 @@ export class VariantDTO {
   @Min(0)
   price: number;
 
+  // حداقل سفارش به کیلو
+  @IsInt()
+  @Min(1)
+  minOrder: number;
+
   @IsOptional()
   @Min(0)
   @Max(100)
@@ -65,11 +71,11 @@ export class VariantDTO {
   @IsNumber()
   productId: number;
 
-  @ArrayNotEmpty()
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => Props)
-  props: Props[];
+  props?: Props[];
 
   @IsOptional()
   @IsString()

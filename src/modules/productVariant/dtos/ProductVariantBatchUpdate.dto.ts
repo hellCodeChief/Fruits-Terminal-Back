@@ -2,6 +2,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -54,6 +55,12 @@ class ProductVariantUpdateDTO {
   @Min(0)
   @IsNumber()
   price?: number;
+
+  // حداقل سفارش به کیلو
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  minOrder?: number;
 
   @IsOptional()
   @Min(0)

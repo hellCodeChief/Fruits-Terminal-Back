@@ -321,17 +321,7 @@ export class ProductVariantService {
         });
       }
 
-      // Remove redundant variants
-      if (updatedVariants?.length > 0) {
-        const varIds = updatedVariants.map(v => v.id);
-        await queryRunner.manager
-          .createQueryBuilder()
-          .delete()
-          .from(ProductVariantEntity)
-          .where('id NOT IN (:...varIds)', { varIds })
-          .execute();
-      }
-
+      // ✅ ذخیره فقط همین ردیف‌ها را به‌روز می‌کند؛ حذف خودکار بقیه، تنوع‌های دیگر جدول را پاک می‌کرد
       await queryRunner.commitTransaction();
 
       return updatedVariants;
@@ -406,7 +396,7 @@ export class ProductVariantService {
   private async generateSKU(each_variant: any) {
     let sku_prop_type_limit = Number(process.env.SKU_PROP_TYPE_LIMIT) || 3;
     const productVariantSlug = each_variant.slug.split(' ').join('_') || 'prod';
-    const props = each_variant.props;
+    const props = each_variant.props ?? [];
 
     // Get all types of productVariant's property
     const seen = new Set<number>();
@@ -427,6 +417,11 @@ export class ProductVariantService {
     const propValueIds = shuffledProperties
       .slice(0, sku_prop_type_limit)
       .map((prop) => prop?.propertyValueId!);
+
+    if (propValueIds.length === 0) {
+      each_variant.sku = `${productVariantSlug}-${Date.now()}`;
+      return;
+    }
 
     // Get chosen propertyValues from db
     const propertyValues = await this.PropertyValueRepository.find({

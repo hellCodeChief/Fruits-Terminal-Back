@@ -133,8 +133,9 @@ export class ProductVariantController {
   @Permissions('variant:hard-delete')
   async hardDelete(@Param('id') id: string) {
     try {
-      await this.productVariantService.hardDelete(Number(id));
+      // ✅ عکس تنوع قبل از حذف ردیف؛ CASCADE بعد از آن ردیف files را پاک می‌کند
       await this.filesService.multiDelete(id, this.usage);
+      await this.productVariantService.hardDelete(Number(id));
       return {
         message: 'ProductVariant successfully hard deleted',
         statusCode: HttpStatus.OK,
