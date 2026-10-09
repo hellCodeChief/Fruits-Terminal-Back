@@ -24,6 +24,7 @@ import { DailyProductService } from './dailyProduct.service';
 import { DailyProductInsertDTO } from './dtos/DailyProductInsert.dto';
 import { DailyProductUpdateDTO } from './dtos/DailyProductUpdate.dto';
 
+// ✅ خواندن و نوشتن حجره فقط روی dailyProduct
 @Controller('daily-product')
 @ApiBearerAuth('access-token')
 export class DailyProductController {
@@ -46,21 +47,21 @@ export class DailyProductController {
 
   @Post()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('product:create')
+  @Permissions('dailyProduct:create')
   async insert(@Body() payload: DailyProductInsertDTO) {
     return await this.dailyProductService.insert(payload);
   }
 
   @Put('/:id')
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('product:update')
+  @Permissions('dailyProduct:update')
   async update(@Body() payload: DailyProductUpdateDTO, @Param('id') id: number) {
     return await this.dailyProductService.update(payload, id);
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('product:soft-delete')
+  @Permissions('dailyProduct:soft-delete')
   async softDelete(@Param('id') id: number) {
     try {
       await this.dailyProductService.softDelete(id);
@@ -78,7 +79,7 @@ export class DailyProductController {
 
   @Delete('hard-delete/:id')
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('product:hard-delete')
+  @Permissions('dailyProduct:hard-delete')
   async hardDelete(@Param('id') id: string) {
     try {
       // ✅ عکس‌ها قبل از حذف ردیف؛ CASCADE بعد از آن ردیف files را پاک می‌کند
@@ -99,7 +100,7 @@ export class DailyProductController {
 
   @Post('upload/:id')
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('product:upload')
+  @Permissions('dailyProduct:upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
