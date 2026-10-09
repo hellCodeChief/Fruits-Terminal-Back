@@ -8,6 +8,7 @@ import { UserModule } from 'src/modules/user/user.module';
 import appConfig from './config/app.config';
 import AppDataSource from './database/database.config';
 import { ProductModule } from './modules/product/product.module';
+import { DailyProductModule } from './modules/dailyProduct/dailyProduct.module';
 import { CategoryModule } from './modules/category/category.module';
 import { ProductVariantModule } from './modules/productVariant/productVariant.module';
 import { PropertyModule } from './modules/property/property.module';
@@ -52,6 +53,7 @@ import { PropertyValueController } from './modules/propertyValue/propertyValue.c
     AuthModule,
     RoleModule,
     ProductModule,
+    DailyProductModule,
     CategoryModule,
     ProductVariantModule,
     PropertyModule,
