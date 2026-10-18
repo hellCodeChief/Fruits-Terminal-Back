@@ -24,7 +24,7 @@ import { DailyProductService } from './dailyProduct.service';
 import { DailyProductInsertDTO } from './dtos/DailyProductInsert.dto';
 import { DailyProductUpdateDTO } from './dtos/DailyProductUpdate.dto';
 
-// ✅ خواندن و نوشتن حجره فقط روی dailyProduct
+//  خواندن و نوشتن حجره فقط روی dailyProduct
 @Controller('daily-product')
 @ApiBearerAuth('access-token')
 export class DailyProductController {
@@ -55,7 +55,10 @@ export class DailyProductController {
   @Put('/:id')
   @UseGuards(AuthGuard, PermissionsGuard)
   @Permissions('dailyProduct:update')
-  async update(@Body() payload: DailyProductUpdateDTO, @Param('id') id: number) {
+  async update(
+    @Body() payload: DailyProductUpdateDTO,
+    @Param('id') id: number,
+  ) {
     return await this.dailyProductService.update(payload, id);
   }
 
@@ -110,8 +113,7 @@ export class DailyProductController {
       throw new BadRequestException('لطفا فایل موردنظر خود را وارد کنید');
 
     const row = await this.dailyProductService.findOne(targetId);
-    if (!row)
-      throw new BadRequestException('شناسه ارسال شده معتبر نمیباشد');
+    if (!row) throw new BadRequestException('شناسه ارسال شده معتبر نمیباشد');
 
     return await this.filesService.uploadFile(file, {
       targetId,
