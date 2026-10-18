@@ -10,6 +10,7 @@ import {
 import { CategoryEntity } from "src/modules/category/category.entity";
 import { ProductVariantEntity } from "src/modules/productVariant/productVariant.entity";
 import { ProductEntity } from "src/modules/product/product.entity";
+import { DailyProductEntity } from "src/modules/dailyProduct/dailyProduct.entity";
 import { FileUsage } from "./types/files.type";
 
 @Entity('files')
@@ -68,4 +69,15 @@ export class FileEntity {
   })
   @JoinColumn({ name: 'productId' })
   product: ProductEntity;
+
+  @Column({ nullable: true })
+  @Index()
+  dailyProductId: number;
+
+  @ManyToOne(() => DailyProductEntity, dailyProduct => dailyProduct.files, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'dailyProductId' })
+  dailyProduct: DailyProductEntity;
 }

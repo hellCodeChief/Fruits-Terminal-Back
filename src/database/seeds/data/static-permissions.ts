@@ -8,6 +8,15 @@ export const staticPermissions: any = [
     { name: 'product:hard-delete', description: 'حذف دائمی محصول' },
     { name: 'product:upload', description: 'آپلود فایل برای محصول' },
 
+    // ✅ حجره؛ dailyProduct:read مسیر داشبورد /dashboard/daily-product را باز می‌کند
+    { name: 'dailyProduct:create', description: 'ایجاد محصول روز' },
+    { name: 'dailyProduct:update', description: 'ویرایش محصول روز' },
+    { name: 'dailyProduct:read', description: 'مشاهده لیست محصولات روز' },
+    { name: 'dailyProduct:read-one', description: 'مشاهده یک محصول روز' },
+    { name: 'dailyProduct:soft-delete', description: 'حذف نرم محصول روز' },
+    { name: 'dailyProduct:hard-delete', description: 'حذف دائمی محصول روز' },
+    { name: 'dailyProduct:upload', description: 'آپلود فایل برای محصول روز' },
+
     // Category
     { name: 'category:create', description: 'ایجاد دسته‌بندی' },
     { name: 'category:update', description: 'ویرایش دسته‌بندی' },

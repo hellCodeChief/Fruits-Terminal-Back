@@ -103,6 +103,9 @@ export class FilesService {
       case 'product':
         where.productId = String(targetId);
         break;
+      case 'daily-product':
+        where.dailyProductId = String(targetId);
+        break;
     }
 
     const files = await this.fileRepository.find({ where });
@@ -162,6 +165,9 @@ export class FilesService {
         break;
       case 'product':
         createFilePayload.productId = targetId;
+        break;
+      case 'daily-product':
+        createFilePayload.dailyProductId = targetId;
         break;
     }
 
